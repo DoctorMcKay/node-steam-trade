@@ -1,6 +1,7 @@
 module.exports = SteamTrade;
 
 var request = require('request');
+var async = require('async');
 
 require('util').inherits(SteamTrade, require('events').EventEmitter);
 
@@ -10,6 +11,17 @@ function SteamTrade(pollInterval) {
   this._j = request.jar();
   this._request = request.defaults({jar:this._j});
   this._pollInterval = pollInterval || 1000;
+  
+  var self = this;
+  this._itemQueue = async.queue(function(item, callback) {
+    if(item.action == 'add') {
+      self._addItem(item.item, callback);
+    } else {
+      self._removeItem(item.item, callback);
+    }
+  }, 1);
+  
+  this._msgQueue = async.queue(self._chatMsg.bind(self), 1);
 }
 
 SteamTrade.prototype._loadForeignInventory = function(appid, contextid) {
@@ -321,6 +333,10 @@ function mergeWithDescriptions(items, descriptions, contextid) {
 }
 
 SteamTrade.prototype.addItem = function(item, callback) {
+  this._itemQueue.push({"action": "add", "item": item}, callback);
+};
+
+SteamTrade.prototype._addItem = function(item, callback) {
   // find first free slot
   for (var slot = 0; slot in this._meAssets; slot++);
   
@@ -368,6 +384,10 @@ SteamTrade.prototype.addItems = function(items, callback) {
 };
 
 SteamTrade.prototype.removeItem = function(item, callback) {
+  this._itemQueue.push({"action": "remove", "item": item}, callback);
+};
+
+SteamTrade.prototype._removeItem = function(item, callback) {
   this._send('removeitem', {
     appid: item.appid,
     contextid: item.contextid,
@@ -419,6 +439,10 @@ SteamTrade.prototype.cancel = function(callback) {
 };
 
 SteamTrade.prototype.chatMsg = function(msg, callback) {
+  this._msgQueue.push(msg, callback);
+};
+
+SteamTrade.prototype._chatMsg = function(msg, callback) {
   this._send('chat', {
     message: msg,
     logpos: this._nextLogPos,
