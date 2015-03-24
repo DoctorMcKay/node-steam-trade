@@ -4,11 +4,12 @@ var request = require('request');
 
 require('util').inherits(SteamTrade, require('events').EventEmitter);
 
-function SteamTrade() {
+function SteamTrade(pollInterval) {
   require('events').EventEmitter.call(this);
   
   this._j = request.jar();
   this._request = request.defaults({jar:this._j});
+  this._pollInterval = pollInterval || 1000;
 }
 
 SteamTrade.prototype._loadForeignInventory = function(appid, contextid) {
@@ -145,7 +146,7 @@ SteamTrade.prototype._onTradeStatusUpdate = function(body, callback) {
         self.emit('error', err);
       }
     });
-  }, 1000);
+  }, this._pollInterval);
   
   if (body.newversion)
     // we can update our own assets safely
