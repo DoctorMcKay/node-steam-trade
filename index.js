@@ -140,6 +140,8 @@ SteamTrade.prototype._onTradeStatusUpdate = function(body, callback) {
       }[body.trade_status], body.tradeid);
     }
     
+    this._itemQueue.kill();
+    this._msgQueue.kill();
     delete this.tradePartnerSteamID;
     return;
   }
@@ -432,6 +434,8 @@ SteamTrade.prototype.cancel = function(callback) {
   this._send('cancel', {}, function(res) {
     if (res.success) {
       // stop polling
+      this._itemQueue.kill();
+      this._msgQueue.kill();
       delete this.tradePartnerSteamID;
     }
     callback && callback(res);
