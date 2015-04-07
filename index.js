@@ -238,6 +238,7 @@ SteamTrade.prototype._send = function(action, data, callback) {
   data.sessionid = this.sessionID;
   
   var self = this;
+  var reqstart = Date.now();
   
   this._request.post({
     uri: 'http://steamcommunity.com/trade/' + this.tradePartnerSteamID + '/' + action,
@@ -258,6 +259,8 @@ SteamTrade.prototype._send = function(action, data, callback) {
       self._send(action, data, callback);
       return;
     }
+    
+    self.emit('debug', 'request ' + action + ' completed in ' + (Date.now() - reqstart) + ' ms');
     
     self._onTradeStatusUpdate(body, callback);
     return;
