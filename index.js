@@ -21,7 +21,15 @@ function SteamTrade(pollInterval) {
     }
   }, 1);
   
+  this._itemQueue.drain = function() {
+    self.emit('allItemsAdded');
+  });
+  
   this._msgQueue = async.queue(self._chatMsg.bind(self), 1);
+  
+  this._msgQueue.drain = function() {
+    self.emit('allMessagesSent');
+  });
 }
 
 SteamTrade.prototype._loadForeignInventory = function(appid, contextid) {
