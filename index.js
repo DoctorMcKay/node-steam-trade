@@ -293,6 +293,25 @@ SteamTrade.prototype.open = function(steamID, callback) {
   }, callback);
 };
 
+SteamTrade.prototype.getEscrowDuration = function(callback) {
+  var self = this;
+  this._request.get('http://steamcommunity.com/trade/' + this.tradePartnerSteamID, function(error, response, body) {
+    var them = body.match(/var g_daysTheirEscrow = (\d+);/);
+    var us = body.match(/var g_daysMyEscrow = (\d+);/);
+    
+    var escrowDays = 0;
+    if (them && self.themAssets.length > 0 && them[1] > escrowDays) {
+      escrowDays = parseInt(them[1], 10);
+    }
+    
+    if (us && self._meAssets.length > 0 && us[1] > escrowDays) {
+      escrowDays = parseInt(us[1], 10);
+    }
+    
+    callback(escrowDays, them ? parseInt(them[1], 10) : 0, us ? parseInt(us[1], 10) : 0);
+  });
+};
+
 SteamTrade.prototype.getContexts = function(callback) {
   this._request.get('http://steamcommunity.com/trade/' + this.tradePartnerSteamID, function(error, response, body) {
     var appContextData = body.match(/var g_rgAppContextData = (.*);/);
